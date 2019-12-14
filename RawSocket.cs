@@ -26,12 +26,12 @@ namespace ComputerNetworkFinal
         private readonly byte[] _buffer;
         public RawSocket(string ip)
         {
-            _buffer = new byte[40960];
+            _buffer = new byte[65536];
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP) { Blocking = true };
             _socket.Bind(new IPEndPoint(IPAddress.Parse(ip), 0));
             _socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, 1);
             byte[] IN = { 1, 0, 0, 0 };
-            byte[] OUT = new byte[4];
+            byte[] OUT = { 0, 0, 0, 0 };
             _socket.IOControl(IOControlCode.ReceiveAll, IN, OUT);
         }
 
@@ -82,12 +82,12 @@ namespace ComputerNetworkFinal
                         break;
                 }
 
-                
                 Console.WriteLine($"{ipSrcAddress} => {ipDestAddress}");
                 Console.WriteLine($"版本 {(header->ip_version__header_length & 0xf0) >> 4} 首部长度 {header->ip_version__header_length & 0x0f}");
                 Console.WriteLine($"总长度 {header->ip_total_length}");
                 Console.WriteLine($"标识 {header->ip_id}");
-                Console.WriteLine($"DF {(header->ip_flag_offset& 0b0100000000000000) >> 14} MF {(header->ip_flag_offset & 0b00100000000000000) >> 13} 片偏移 {header->ip_flag_offset & 0b0001111111111111}");
+                Console.WriteLine($"标志/片偏移 {header->ip_flag_offset}");
+                Console.WriteLine($"R {(header->ip_flag_offset & 0b1000000000000000) >> 15} DF {(header->ip_flag_offset & 0b0100000000000000) >> 14} MF {(header->ip_flag_offset & 0b0010000000000000) >> 13} 片偏移 {header->ip_flag_offset & 0b0001111111111111}");
                 Console.WriteLine($"TTL {header->ip_ttl}");
                 Console.WriteLine($"协议 {protocol}");
                 Console.WriteLine($"首部校验和 {header->ip_checksum}");
@@ -112,14 +112,17 @@ namespace ComputerNetworkFinal
 
         public void Start()
         {
-            Receive();
+            while (true)
+            {
+                Receive();
+            }
+            
         }
 
         private void Receive()
         {
             _socket.Receive(_buffer);
             ParseReceivedBuffer(_buffer, _buffer.Length);
-            Receive();
         }
 
 
