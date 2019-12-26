@@ -10,12 +10,16 @@ namespace ComputerNetworkFinal
     {
         [FieldOffset(0)] public readonly byte ip_version__header_length; // IP version and IP Header length
         [FieldOffset(1)] public readonly byte ip_tos; // Type of service
-        [FieldOffset(2)] public readonly ushort ip_total_length; // total length of the packet
-        [FieldOffset(4)] public readonly ushort ip_id; // unique identifier
-        [FieldOffset(6)] public readonly ushort ip_flag_offset; // flags and offset
+        [FieldOffset(2)] public readonly byte ip_total_length_0;
+        [FieldOffset(3)] public readonly byte ip_total_length_1;// total length of the packet
+        [FieldOffset(4)] public readonly byte ip_id_0;
+        [FieldOffset(5)] public readonly byte ip_id_1;// unique identifier
+        [FieldOffset(6)] public readonly byte ip_flag_offset_0;
+        [FieldOffset(7)] public readonly byte ip_flag_offset_1;// flags and offset
         [FieldOffset(8)] public readonly byte ip_ttl; // Time To Live
         [FieldOffset(9)] public readonly byte ip_protocol; // protocol (TCP, UDP etc)
-        [FieldOffset(10)] public readonly ushort ip_checksum; //IP Header checksum
+        [FieldOffset(10)] public readonly byte ip_checksum_0;
+        [FieldOffset(11)] public readonly byte ip_checksum_1;//IP Header checksum
         [FieldOffset(12)] public readonly uint ip_src_address; //Source address
         [FieldOffset(16)] public readonly uint ip_dest_address; //Destination Address
     }
@@ -81,16 +85,24 @@ namespace ComputerNetworkFinal
                         protocol = "UNKNOWN";
                         break;
                 }
-
+                var totalLength = (header->ip_total_length_0 << 8) + header->ip_total_length_1;
+                var id = (header->ip_id_0 << 8) + header->ip_id_1;
+                var flagOffset = (header->ip_flag_offset_0 << 8) + header->ip_flag_offset_1;
+                var flag = header->ip_flag_offset_0 >> 5;
+                var r = (flag & 0b100) >> 2;
+                var df = (flag & 0b010) >> 1;
+                var mf = flag & 0b001;
+                var offset = ((header->ip_flag_offset_0 & 0b00011111) << 8) + header->ip_flag_offset_1;
+                var checksum = (header->ip_checksum_0 << 8) + header->ip_checksum_1;
                 Console.WriteLine($"{ipSrcAddress} => {ipDestAddress}");
                 Console.WriteLine($"版本 {(header->ip_version__header_length & 0xf0) >> 4} 首部长度 {header->ip_version__header_length & 0x0f}");
-                Console.WriteLine($"总长度 {header->ip_total_length}");
-                Console.WriteLine($"标识 {header->ip_id}");
-                Console.WriteLine($"标志/片偏移 {header->ip_flag_offset}");
-                Console.WriteLine($"R {(header->ip_flag_offset & 0b1000000000000000) >> 15} DF {(header->ip_flag_offset & 0b0100000000000000) >> 14} MF {(header->ip_flag_offset & 0b0010000000000000) >> 13} 片偏移 {header->ip_flag_offset & 0b0001111111111111}");
+                Console.WriteLine($"总长度 {totalLength}");
+                Console.WriteLine($"标识 {id}");
+                Console.WriteLine($"标志/片偏移 {flagOffset}");
+                Console.WriteLine($"R {r} DF {df} MF {mf} 片偏移 {offset}");
                 Console.WriteLine($"TTL {header->ip_ttl}");
                 Console.WriteLine($"协议 {protocol}");
-                Console.WriteLine($"首部校验和 {header->ip_checksum}");
+                Console.WriteLine($"首部校验和 {checksum}");
                 Console.WriteLine();
 
             }
